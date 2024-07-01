@@ -1,6 +1,52 @@
+"""
+Nth-order differential matrices.
+
+Default discretization:
+* "chebyshev" for Chebyshev spectral differentiation matrices
+* "periodic" for Fourier spectral differentiation matrices
+* "uniform" for finite-differences differentiation matrices (NotImplemented)
+
+By design, differentiation matrices should be created by passing the numerical
+grid and derivative's parameters to the Python class DifferentiatonMatrix.
+Alternatively, differentiation matrices may be created using their constructors.
+For example, the constructor for a Fourier differentiation matrix is `four_mat'.
+In this case, must pass suitable grid points to the constructor function as a
+parameter.
+
+This module contains the following (public) routines:
+* cheb_mat(x, order, **kwargs) -> np.ndarray
+* bary_cheb_mat(x, order, **kwargs) -> np.ndarray
+* four_mat(x, order, **kwargs) -> np.ndarray
+
+And the Python class:
+* DifferentiationMatrix
+
+DifferentiationMatrix is the main class for working with differentiation
+matrices. Get an instance of a matrix by calling on of the two methods
+(see the documentation below for details):
+* DifferentiationMatrix(
+    grid: Grid,
+    axis: int = 0,
+    order: int = 1,
+    accuracy: Union[None, int] = None,
+    parity: Union[None, int] = None,
+    symmetry: Union[None, str] = None,
+    **kwargs,
+)
+* DifferentiationMatrix.register(
+    grid: Grid,
+    axis: int = 0,
+    order: int = 1,
+    accuracy: Union[None, int] = None,
+    parity: Union[None, int] = None,
+    symmetry: Union[None, str] = None,
+    num: Union[None, int] = None,
+    override: bool = False,
+    **kwargs,
+)
+"""
 import warnings
 from typing import Union
-from dataclasses import dataclass, field
 from operator import index
 from copy import deepcopy
 import numpy as np
@@ -13,7 +59,6 @@ __all__ = [
     "cheb_mat",
     "bary_cheb_mat",
     "four_mat",
-    "Derivative",
     "DifferentialMatrix",
 ]
 
@@ -22,7 +67,7 @@ def _dmat_manager(_dmat_manager_instance=ObjectManager()):
     return _dmat_manager_instance
 
 
-def cheb_mat(x, order, **kwargs):
+def cheb_mat(x, order, **kwargs) -> np.ndarray:
     """Computes 1D Chebyshev differential matrix [1].
 
     References
@@ -44,7 +89,7 @@ def cheb_mat(x, order, **kwargs):
     return np.linalg.matrix_power(mat, order)
 
 
-def bary_cheb_mat(x, order, **kwargs):
+def bary_cheb_mat(x, order, **kwargs) -> np.ndarray:
     """Computes Chebyshev differential matrix using method described in [1].
 
     References
@@ -88,7 +133,7 @@ def bary_cheb_mat(x, order, **kwargs):
     return d
 
 
-def four_mat(x, order, **kwargs):
+def four_mat(x, order, **kwargs) -> np.ndarray:
     """Computes 1D Fourier differential matrix [1].
 
     References
@@ -140,35 +185,20 @@ _DMAT_CONSTRUCTORS = {
 }
 
 
-@dataclass
-class Derivative:
-    """Helper class to isolate derivative's properties and post-init checks"""
-    axis: int
-    order: int
-    accuracy: Union[None, int] = None
-    parity: Union[None, int] = None
-    symmetry: Union[None, str] = None
-    kwargs: dict = field(default_factory=dict)
-
-    def __post_init__(self):
-        # TODO: check for symmetry
-        try:
-            index(self.order)
-        except TypeError as e:
-            raise TypeError("Derivatives' order must be an integer.") from e
-        if self.order < 0:
-            raise ValueError("Derivative's order must be a positive number or 0.")
-
-
 class DifferentialMatrix(np.ndarray):
-    def __new__(cls, grid, d: Derivative):
+    def __new__(
+        cls,
+        grid: Grid,
+        axis: int = 0,
+        order: int = 1,
+        accuracy: Union[None, int] = None,
+        parity: Union[None, int] = None,
+        symmetry: Union[None, str] = None,
+        **kwargs,
+    ):
         mats = [np.eye(grid.npts[axis]) for axis in range(grid.num_dim)]
 
-        order = d.order
         if order > 0:
-            axis, accuracy, parity, symmetry, kwargs = (
-                d.axis, d.accuracy, d.parity, d.symmetry, d.kwargs
-            )
             disc = grid.discs[axis]
             # If the user specified the accuracy, pass it as a keyword argument.
             if accuracy is not None:
@@ -292,8 +322,7 @@ class DifferentialMatrix(np.ndarray):
 
         dmat = getattr(dmat_manager, str(num), None)
         if dmat is None or override:
-            deriv = Derivative(axis, order, accuracy, parity, symmetry, kwargs)
-            dmat = cls(grid, deriv)
+            dmat = cls(grid, axis, order, accuracy, parity, symmetry, **kwargs)
             dmat._num = num
             setattr(dmat_manager, str(num), dmat)
 
