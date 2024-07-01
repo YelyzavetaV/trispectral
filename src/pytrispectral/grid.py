@@ -69,8 +69,7 @@ def cheb_pts(xmin=-1., xmax=1., npts=30) -> np.ndarray:
 
     Returns
     -------
-    x: numpy.ndarray
-        (Mapped) Chebyshev points of second kind.
+    1D numpy.ndarray containing (mapped) Chebyshev points of second kind.
 
     Raises
     ------
@@ -108,8 +107,7 @@ def clenshaw_curtis_weights(nx: int) -> np.ndarray:
 
     Returns
     -------
-    w: np.ndarray
-        Array with quadrature weights.
+    1D np.ndarray containing Clenshaw-Curtis quadrature weights.
     """
     c = 2 / np.hstack([1, 1 - np.arange(2, nx, 2) ** 2])
     c = np.hstack([c, np.take(c, np.arange(np.floor(nx / 2) - 1, 0, -1, dtype=int))])
@@ -126,6 +124,10 @@ def cheb_bary_weights(nx: int) -> np.ndarray:
     ----------
     nx: int
         Number of Chebyshev points.
+
+    Returns
+    -------
+    1D np.ndarray containing Chebyshev barycentric weights.
 
     References
     ----------
@@ -194,6 +196,11 @@ class Grid(np.ndarray):
         Get quadrature weights along specific axis.
     weight_matrix: instance method
         Get the weight matrix of the grid.
+
+    Notes
+    -----
+    This class inherits from np.ndarray and therefore possesses all the
+    attrributes and methods of a numpy array.
     """
     def __new__(cls, arrs, *, discs=[], geom="cart"):
         mgrids = np.meshgrid(*arrs, indexing="ij")
@@ -495,8 +502,7 @@ class Grid(np.ndarray):
 
         Returns
         -------
-        numpy.ndarray
-            Coordinates along the axis.
+        1D numpy.ndarray containing coordinates along a given axis.
 
         Raises
         ------
@@ -552,8 +558,7 @@ class Grid(np.ndarray):
 
         Returns
         -------
-        numpy.ndarray
-            Quadrature weights along the axis.
+        1D numpy.ndarray containing quadrature weights along a given axis.
 
         Raises
         ------
@@ -598,8 +603,7 @@ class Grid(np.ndarray):
 
         Returns
         -------
-        numpy.ndarray
-            Weight matrix.
+        2D numpy.ndarray contaning the weight matrix.
         """
         weights = [
             np.diag(self.weights(axis, symmetry, fun)) for axis in range(self.num_dim)

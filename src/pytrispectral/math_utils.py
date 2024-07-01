@@ -9,21 +9,19 @@ __all__ = ["nkron"]
 def nkron(*mats):
     """Computes chain Kronecker product of n matrices.
 
-    In the chain of Kronecker products, matrices appear in the order reversed to that
-    of mats. For instance, for four input matrices a1, a2, a3, a4, the output is
-    kron(a4, kron(a3, kron(a2, a1))).
+    The arguments must be provided in the reversed order. For example, to compute
+    the Kronecker product C ⨂ (B ⨂ A), call `nkron(A, B, C)'.
 
     Parameters
     ----------
     mats: numpy.ndarrays
-        Chain Kronecker product input matrices.
+        Input matrices in the reversed order.
 
     Returns
     -------
-    mat: numpy.ndarray
-        2D numpy.ndarray of a shape (m1 * m2 * ... * mN) x (n1 * n2 * ... * nN), where
-        mi and ni are a number of rows and a number of columns in i-th input array,
-        respectively.
+    2D numpy.ndarray of a shape (m1 * m2 * ... * mN) x (n1 * n2 * ... * nN)
+    where mi and ni are a number of rows and a number of columns in i-th input
+    array, respectively.
     """
     nrow, ncol = np.prod([mat.shape[0] for mat in mats]), np.prod(
         [mat.shape[1] for mat in mats]
