@@ -18,6 +18,7 @@ min_dependent_packages = {
     "scipy": SCIPY_MIN_VERSION,
 }
 
+
 def setup_package():
     python_requires = ">=3.12"
 
@@ -27,8 +28,8 @@ def setup_package():
         maintainer_email=MAINTAINER_EMAIL,
         description=DESCRIPTION,
         license=LICENSE,
-#        download_url=DOWNLOAD_URL,
-#        project_urls=PROJECT_URLS,
+        #        download_url=DOWNLOAD_URL,
+        #        project_urls=PROJECT_URLS,
         version=VERSION,
         long_description=LONG_DESCRIPTION,
         classifiers=[

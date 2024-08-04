@@ -45,6 +45,7 @@ matrices. Get an instance of a matrix by calling on of the two methods
     **kwargs,
 )
 """
+
 import warnings
 from typing import Union
 from operator import index
@@ -62,6 +63,7 @@ __all__ = [
     "DifferentialMatrix",
 ]
 
+
 def _dmat_manager(_dmat_manager_instance=ObjectManager()):
     """Getter for the DmatManager's one and only instance."""
     return _dmat_manager_instance
@@ -78,7 +80,9 @@ def cheb_mat(x, order, **kwargs) -> np.ndarray:
     x = x.reshape((npts, 1))
     n = np.arange(npts)
 
-    c = (np.hstack(([2.0], np.ones(npts - 2), [2.0])) * (-1) ** n).reshape(npts, 1)
+    c = (np.hstack(([2.0], np.ones(npts - 2), [2.0])) * (-1) ** n).reshape(
+        npts, 1
+    )
     X = np.tile(x, (1, npts))
     dX = X - X.T
     # The np.eye term is to avoid division by zero on the diagonal; the diagonal
@@ -119,7 +123,7 @@ def bary_cheb_mat(x, order, **kwargs) -> np.ndarray:
     np.fill_diagonal(d, -np.sum(d, axis=1))
 
     k = np.diagonal(d).copy()
-    k[:nx - int(nx / 2) - 1:-1] = -k.copy()[:int(nx / 2)]
+    k[: nx - int(nx / 2) - 1 : -1] = -k.copy()[: int(nx / 2)]
     np.fill_diagonal(d, k)
 
     if order == 2:
@@ -128,7 +132,9 @@ def bary_cheb_mat(x, order, **kwargs) -> np.ndarray:
         np.fill_diagonal(d, -np.sum(d, axis=1))
 
     if order > 2:
-        raise NotImplementedError(f"Chebyshev matrix of order {order} not implemented")
+        raise NotImplementedError(
+            f"Chebyshev matrix of order {order} not implemented"
+        )
 
     return d
 
@@ -168,8 +174,8 @@ def four_mat(x, order, **kwargs) -> np.ndarray:
         return toeplitz(col)
     else:
         raise NotImplementedError(
-                "Fourier matrix not implemented for derivatives of order higher than 2"
-            )
+            "Fourier matrix not implemented for derivatives of order higher than 2"
+        )
 
 
 _DMAT_CONSTRUCTORS = {
@@ -204,7 +210,7 @@ class DifferentialMatrix(np.ndarray):
             if accuracy is not None:
                 kwargs["accuracy"] = accuracy
 
-            s = 1 # symmetry coefficient
+            s = 1  # symmetry coefficient
             if symmetry is not None:
                 if "anti-pole" in symmetry:
                     s = -1
@@ -231,13 +237,13 @@ class DifferentialMatrix(np.ndarray):
 
                 obj = (
                     mats[0][nr:, nr:]
-                    + parity * (-1)**n * mats[0][nr:, nr - 1 :: -1]
+                    + parity * (-1) ** n * mats[0][nr:, nr - 1 :: -1]
                 )
             case "polar":
                 nphi, nr = grid.npts
                 nr = p = int(nr / 2)
 
-                if axis == 0: # derivative in ϕ
+                if axis == 0:  # derivative in ϕ
                     # No special care needed for the radial matrix except that only
                     # "positive" quarter is taken into into account.
                     mats[1] = mats[1][p:, p:]
@@ -317,8 +323,9 @@ class DifferentialMatrix(np.ndarray):
             try:
                 index(num)
             except TypeError as e:
-                raise TypeError("Unique identifier num must be an integer") from e
-
+                raise TypeError(
+                    "Unique identifier num must be an integer"
+                ) from e
 
         dmat = getattr(dmat_manager, str(num), None)
         if dmat is None or override:
@@ -331,4 +338,3 @@ class DifferentialMatrix(np.ndarray):
     def unregister(self):
         dmat_manager = _dmat_manager()
         dmat_manager.drop(num=self.num)
-

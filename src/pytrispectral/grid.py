@@ -30,6 +30,7 @@ one of the following class methods:
     nphi, nr, rdisc="chebyshev", register=True, num=None, override=False
 )
 """
+
 from typing import Union
 import operator
 import warnings
@@ -42,15 +43,15 @@ __all__ = [
     "clenshaw_curtis_weights",
     "cheb_bary_weights",
     "Grid",
-
 ]
+
 
 def _grid_manager(_grid_manager_instance=ObjectManager()):
     """Getter for the GridManager's one and only instance."""
     return _grid_manager_instance
 
 
-def cheb_pts(xmin=-1., xmax=1., npts=30) -> np.ndarray:
+def cheb_pts(xmin=-1.0, xmax=1.0, npts=30) -> np.ndarray:
     """
     Returns (mapped) Chebyshev points of second kind.
 
@@ -83,7 +84,9 @@ def cheb_pts(xmin=-1., xmax=1., npts=30) -> np.ndarray:
     except TypeError as e:
         raise TypeError("npts must be an integer.") from e
     if npts < 0:
-        raise ValueError(f"Number of grid points, {npts}, must be a positive integer.")
+        raise ValueError(
+            f"Number of grid points, {npts}, must be a positive integer."
+        )
 
     x = np.sin(np.arange(-npts + 1, npts, 2) * np.pi / 2 / (npts - 1))
     return (x + 1) / 2.0 * (xmax - xmin) + xmin
@@ -110,7 +113,9 @@ def clenshaw_curtis_weights(nx: int) -> np.ndarray:
     1D np.ndarray containing Clenshaw-Curtis quadrature weights.
     """
     c = 2 / np.hstack([1, 1 - np.arange(2, nx, 2) ** 2])
-    c = np.hstack([c, np.take(c, np.arange(np.floor(nx / 2) - 1, 0, -1, dtype=int))])
+    c = np.hstack(
+        [c, np.take(c, np.arange(np.floor(nx / 2) - 1, 0, -1, dtype=int))]
+    )
 
     w = np.fft.ifft(c)
     w[0] /= 2
@@ -202,6 +207,7 @@ class Grid(np.ndarray):
     This class inherits from np.ndarray and therefore possesses all the
     attrributes and methods of a numpy array.
     """
+
     def __new__(cls, arrs, *, discs=[], geom="cart"):
         mgrids = np.meshgrid(*arrs, indexing="ij")
 
@@ -278,7 +284,10 @@ class Grid(np.ndarray):
         if not discs:
             discs = ["uniform"] * num_dim
 
-        arrs = [_PTS_CONSTRUCTORS[disc](*bound) for bound, disc in zip(bounds, discs)]
+        arrs = [
+            _PTS_CONSTRUCTORS[disc](*bound)
+            for bound, disc in zip(bounds, discs)
+        ]
 
         return cls(arrs, discs=discs, geom=geom)
 
@@ -313,7 +322,9 @@ class Grid(np.ndarray):
 
         ndim = len(arrs)
         if not discs:
-            warnings.warn("Discretization of every coordinate array must be specified.")
+            warnings.warn(
+                "Discretization of every coordinate array must be specified."
+            )
 
             discs = ["uniform"] * ndim
 
@@ -371,7 +382,9 @@ class Grid(np.ndarray):
             try:
                 operator.index(num)
             except TypeError as e:
-                raise TypeError("Unique identifier num must be an integer") from e
+                raise TypeError(
+                    "Unique identifier num must be an integer"
+                ) from e
 
         grid = getattr(grid_manager, str(num), None)
 
@@ -419,7 +432,7 @@ class Grid(np.ndarray):
         """
         if register:
             return cls.register(
-                (-1., 1., 2 * nr),
+                (-1.0, 1.0, 2 * nr),
                 from_bounds=True,
                 discs=(rdisc,),
                 geom="radial",
@@ -428,12 +441,18 @@ class Grid(np.ndarray):
             )
         else:
             return cls.from_bounds(
-                (-1., 1., 2 * nr), discs=(rdisc,), geom="radial"
+                (-1.0, 1.0, 2 * nr), discs=(rdisc,), geom="radial"
             )
 
     @classmethod
     def polar(
-        cls, nphi, nr, rdisc="chebyshev", register=True, num=None, override=False
+        cls,
+        nphi,
+        nr,
+        rdisc="chebyshev",
+        register=True,
+        num=None,
+        override=False,
     ):
         """
         Create an instance of polar grid.
@@ -468,7 +487,7 @@ class Grid(np.ndarray):
         if register:
             return cls.register(
                 (-np.pi, np.pi - 2.0 * np.pi / nphi, nphi),
-                (-1., 1., 2 * nr),
+                (-1.0, 1.0, 2 * nr),
                 from_bounds=True,
                 discs=("periodic", rdisc),
                 geom="polar",
@@ -478,7 +497,7 @@ class Grid(np.ndarray):
         else:
             return cls.from_bounds(
                 (-np.pi, np.pi - 2.0 * np.pi / nphi, nphi),
-                (-1., 1., 2 * nr),
+                (-1.0, 1.0, 2 * nr),
                 discs=("periodic", rdisc),
                 geom="polar",
             )
@@ -531,7 +550,7 @@ class Grid(np.ndarray):
 
         if "polar" in self.geom or "radial" in self.geom:
             if self.num_dim - 1 == axis and not ignore_geom:
-                pts = pts[int(self.npts[axis] / 2):]
+                pts = pts[int(self.npts[axis] / 2) :]
 
         return pts
 
@@ -572,12 +591,12 @@ class Grid(np.ndarray):
                 w = clenshaw_curtis_weights(npts)
             case "periodic" | "uniform":
                 w = np.ones(npts)
-            case _: # shouldn't happen
+            case _:  # shouldn't happen
                 raise ValueError(f"Unknown discretization {self.discs[axis]}")
 
         if "polar" in self.geom or "radial" in self.geom:
             if self.num_dim - 1 == axis:
-                w = w[int(npts / 2):] * self.coordinate_array(axis)
+                w = w[int(npts / 2) :] * self.coordinate_array(axis)
             else:
                 if symmetry is not None:
                     if "pole" in symmetry:
@@ -606,7 +625,8 @@ class Grid(np.ndarray):
         2D numpy.ndarray contaning the weight matrix.
         """
         weights = [
-            np.diag(self.weights(axis, symmetry, fun)) for axis in range(self.num_dim)
+            np.diag(self.weights(axis, symmetry, fun))
+            for axis in range(self.num_dim)
         ]
         if self.num_dim == 1:
             return weights[0]

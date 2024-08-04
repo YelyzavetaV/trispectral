@@ -20,14 +20,19 @@ class ObjectManager:
         try:
             nitem = index(nitem)
         except TypeError as e:
-            raise TypeError("Number of drop items nitem must be an integer.") from e
+            raise TypeError(
+                "Number of drop items nitem must be an integer."
+            ) from e
         if nitem < 0:
-            raise ValueError("Number of drop items nitem must be a positive integer.")
+            raise ValueError(
+                "Number of drop items nitem must be a positive integer."
+            )
 
         if num is None:
             if not nitem:
                 warnings.warn(
-                    "No items dropped: specify num or and nitem.", RuntimeWarning
+                    "No items dropped: specify num or and nitem.",
+                    RuntimeWarning,
                 )
                 return  # To ensure "do-nothing" behaviour
             nums = self.nums()
@@ -42,7 +47,9 @@ class ObjectManager:
                 )
             drops = np.asarray(num)
             if not np.issubdtype(drops.dtype, np.integer):
-                raise TypeError("num must be an integer or an array-like of integers.")
+                raise TypeError(
+                    "num must be an integer or an array-like of integers."
+                )
             if drops.ndim != 1:
                 if not drops.ndim:
                     drops = drops[np.newaxis]
