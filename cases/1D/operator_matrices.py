@@ -2,8 +2,9 @@ from typing import Union
 import numpy as np
 import pytrispectral as ts
 
+__all__ = ["oss_cartesian_matrices", "oss_cylindrical_matrices"]
 
-def cartesian_matrices(
+def oss_cartesian_matrices(
     flow: str,
     grid: ts.Grid,
     Re: float = 5000.0,
@@ -90,7 +91,7 @@ def cartesian_matrices(
     return lmat, rmat
 
 
-def cylindrical_matrices(
+def oss_cylindrical_matrices(
     grid: ts.Grid,
     Re: float = 2000.0,
     alpha: float = 1.0,
