@@ -61,6 +61,11 @@ __all__ = [
     "bary_cheb_mat",
     "four_mat",
     "DifferentialMatrix",
+    "gradient_operator",
+    "divergence_operator",
+    "scalar_laplacian_operator",
+    "vector_laplacian_operator",
+    "directional_derivative_operator",
 ]
 
 
@@ -204,7 +209,7 @@ class DifferentialMatrix(np.ndarray):
     ):
         mats = [np.eye(grid.npts[axis]) for axis in range(grid.num_dim)]
 
-        if order > 0:
+        if order > 0:  # if 1, identity matrix is returned
             disc = grid.discs[axis]
             # If the user specified the accuracy, pass it as a keyword argument.
             if accuracy is not None:
@@ -217,12 +222,6 @@ class DifferentialMatrix(np.ndarray):
 
             mats[axis] = _DMAT_CONSTRUCTORS[disc](
                 grid.coordinate_array(axis, ignore_geom=True), order, **kwargs
-            )
-        else:
-            warnings.warn(
-                f"Requested a 0-th-order derivative along axis {axis} "
-                f"- the identity matrix will be outputted",
-                RuntimeWarning,
             )
 
         match grid.geom:
@@ -338,3 +337,315 @@ class DifferentialMatrix(np.ndarray):
     def unregister(self):
         dmat_manager = _dmat_manager()
         dmat_manager.drop(num=self.num)
+
+
+def gradient_operator(
+    grid: Grid,
+    periodicities: Union[None, tuple] = None,
+    accuracy: Union[None, int] = None,
+    symmetry: Union[None, str] = None,
+    parities: list = [1, 1, 1],
+    stack: bool = True,
+):
+    if periodicities is None:
+        mats = [
+            DifferentialMatrix(
+                grid,
+                axis=axis,
+                order=1,
+                accuracy=accuracy,
+                parity=parity,
+                symmetry=symmetry,
+            )
+            for axis, parity in zip(range(grid.num_dim), parities)
+        ]
+    else:
+        mats = []
+        for (axis, k), parity in zip(periodicities, parities):
+            if axis < grid.num_dim:
+                if k is not None:
+                    raise ValueError(
+                        f"Could not impose periodic direction for axis {axis} "
+                        f" and grid with {grid.num_dim} dimension(s)"
+                    )
+                mat = DifferentialMatrix(
+                    grid,
+                    axis=axis,
+                    order=1,
+                    accuracy=accuracy,
+                    parity=parity,
+                    symmetry=symmetry,
+                )
+            else:
+                mat = (
+                    DifferentialMatrix(  # to make sure, symmetry is respected
+                        grid,
+                        order=0,
+                        accuracy=accuracy,
+                        parity=parity,
+                        symmetry=symmetry,
+                    )
+                    * 1j
+                    * k
+                )
+
+            mats.append(mat)
+
+    if "radial" in grid.geom or "polar" in grid.geom:
+        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+
+        mats[0] = ri[:, np.newaxis] * mats[0]
+
+    if stack:
+        return np.vstack(mats)
+    else:
+        return mats
+
+
+def divergence_operator(
+    grid: Grid,
+    periodicities: Union[None, tuple] = None,
+    accuracy: Union[None, int] = None,
+    symmetry: Union[None, str] = None,
+    parities: list = [-1, -1, 1],
+    stack: bool = True,
+):
+    mats = gradient_operator(
+        grid, periodicities, accuracy, symmetry, parities, stack=False
+    )
+
+    if "radial" in grid.geom or "polar" in grid.geom:
+        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+
+        mats[1] = mats[1] + ri[:, np.newaxis] * np.identity(mats[1].shape[0])
+
+    if stack:
+        return np.hstack(mats)
+    else:
+        return mats
+
+
+def scalar_laplacian_operator(
+    grid: Grid,
+    periodicities: Union[None, tuple] = None,
+    accuracy: Union[None, int] = None,
+    symmetry: Union[None, str] = None,
+    parity: int = 1,
+):
+    if periodicities is None:
+        mats = [
+            DifferentialMatrix(
+                grid,
+                axis=axis,
+                order=2,
+                accuracy=accuracy,
+                parity=parity,
+                symmetry=symmetry,
+            )
+            for axis in range(grid.num_dim)
+        ]
+    else:
+        mats = []
+        for axis, k in periodicities:
+            if axis < grid.num_dim:
+                if k is not None:
+                    raise ValueError(
+                        f"Could not impose periodic direction for axis {axis} "
+                        f" and grid with {grid.num_dim} dimension(s)"
+                    )
+                mat = DifferentialMatrix(
+                    grid,
+                    axis=axis,
+                    order=2,
+                    accuracy=accuracy,
+                    parity=parity,
+                    symmetry=symmetry,
+                )
+            else:
+                mat = (
+                    -DifferentialMatrix(  # to make sure, symmetry is respected
+                        grid,
+                        order=0,
+                        accuracy=accuracy,
+                        parity=parity,
+                        symmetry=symmetry,
+                    )
+                    * k**2
+                )
+
+            mats.append(mat)
+
+    if "radial" in grid.geom or "polar" in grid.geom:
+        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+
+        mats[1] = mats[1] + ri[:, np.newaxis] * DifferentialMatrix(
+            grid,
+            axis=(grid.num_dim - 1),
+            order=1,
+            accuracy=accuracy,
+            parity=parity,
+            symmetry=symmetry,
+        )
+        mats[0] = (ri**2)[:, np.newaxis] * mats[0]
+
+    return np.sum(mats, axis=0)
+
+
+def vector_laplacian_operator(
+    grid: Grid,
+    periodicities: Union[None, tuple] = None,
+    accuracy: Union[None, int] = None,
+    symmetry: Union[None, str] = None,
+    parities: list = [-1, -1, 1],
+):
+    npts = np.prod(grid.npts)
+    if "radial" in grid.geom or "polar" in grid.geom:
+        npts = npts / 2
+
+    ndim = grid.num_dim if periodicities is None else 3
+
+    mats = np.zeros([ndim * npts, ndim * npts])
+
+    for axis in range(ndim):
+        mats[
+            0 + axis * npts : npts + axis * npts,
+            0 + axis * npts : npts + axis * npts,
+        ] = scalar_laplacian_operator(
+            grid, periodicities, accuracy, symmetry, parities[axis]
+        )
+
+    if "radial" in grid.geom or "polar" in grid.geom:
+        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+
+        mats[:npts, :npts] -= ri[:, np.newaxis] * np.identity(npts)
+        mats[npts : 2 * npts, npts : 2 * npts] -= ri[
+            :, np.newaxis
+        ] * np.identity(npts)
+
+        if periodicities[0][1] is None:
+            d = DifferentialMatrix(
+                grid,
+                axis=0,
+                order=1,
+                accuracy=accuracy,
+                parity=-1,
+                symmetry=symmetry,
+            )
+        else:
+            d = (
+                DifferentialMatrix(
+                    grid,
+                    order=0,
+                    parity=-1,
+                    symmetry=symmetry,
+                )
+                * 1j
+                * periodicities[0][1]
+            )
+
+        mats[:npts, npts : 2 * npts] = 2 * (ri**2)[:, np.newaxis] * d
+        mats[npts : 2 * npts, :npts] = -2 * (ri**2)[:, np.newaxis] * d
+
+    return mats
+
+
+def _directional_derivative_operator_from_a(
+    grid: Grid,
+    a: tuple,
+    periodicities: Union[None, tuple] = None,
+    accuracy: Union[None, int] = None,
+    symmetry: Union[None, str] = None,
+    parities: list = [-1, -1, 1],
+):
+    npts = np.prod(grid.npts)
+    if "radial" in grid.geom or "polar" in grid.geom:
+        npts = npts / 2
+
+    ndim = grid.num_dim if periodicities is None else 3
+
+    mats = np.zeros([ndim * npts, ndim * npts])
+
+    for axis in range(ndim):
+        g = gradient_operator(
+            grid, periodicities, accuracy, symmetry, parities[axis], stack=False
+        )
+        g = [a[j][:, np.newaxis] * g[j] for j in range(ndim)]
+        g = np.sum(g, axis=0)
+
+        mats[
+            0 + axis * npts : npts + axis * npts,
+            0 + axis * npts : npts + axis * npts,
+        ] = g
+
+    if "radial" in grid.geom or "polar" in grid.geom:
+        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+
+        mats[:npts, npts : 2 * npts] = (ri * a[0])[:, np.newaxis] * np.identity(
+            npts
+        )
+        mats[npts : 2 * npts, :npts] = -(ri * a[0])[
+            :, np.newaxis
+        ] * np.identity(npts)
+
+    return mats
+
+
+def _directional_derivative_operator_from_b(
+    grid: Grid,
+    b: tuple,
+    periodicities: Union[None, tuple] = None,
+    accuracy: Union[None, int] = None,
+    symmetry: Union[None, str] = None,
+    parities: list = [-1, -1, 1],
+):
+    npts = np.prod(grid.npts)
+    if "radial" in grid.geom or "polar" in grid.geom:
+        npts = npts / 2
+
+    ndim = grid.num_dim if periodicities is None else 3
+
+    mats = np.zeros([ndim * npts, ndim * npts])
+
+    for axis in range(ndim):
+        g = gradient_operator(
+            grid,
+            periodicities,
+            accuracy,
+            symmetry,
+            parities=[parities[axis]] * ndim,
+            stack=False,
+        )
+        g = np.hstack([g[j] @ b[axis] for j in range(ndim)])
+
+        mats[0 + axis * npts : npts + axis * npts] = g
+
+    if "radial" in grid.geom or "polar" in grid.geom:
+        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+
+        mats[:npts, :npts] += (ri * b[1])[:, np.newaxis] * np.identity(npts)
+        mats[npts : 2 * npts, :npts] -= (ri * b[0])[
+            :, np.newaxis
+        ] * np.identity(npts)
+
+    return mats
+
+
+def directional_derivative_operator(
+    grid: Grid,
+    a: Union[None, tuple] = None,
+    b: Union[None, tuple] = None,
+    periodicities: Union[None, tuple] = None,
+    accuracy: Union[None, int] = None,
+    symmetry: Union[None, str] = None,
+    parities: list = [-1, -1, 1],
+):
+    if (a is None and b is None) or (a is not None and b is not None):
+        raise ValueError("Either only a or only b must be specified")
+    elif a is not None:
+        return _directional_derivative_operator_from_a(
+            grid, a, periodicities, accuracy, symmetry, parities
+        )
+    else:
+        return _directional_derivative_operator_from_b(
+            grid, b, periodicities, accuracy, symmetry, parities
+        )
