@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-NAME = "pytrispectral"
+NAME = "trispectral"
 MAINTAINER = ""
 MAINTAINER_EMAIL = "velizhaninae@gmail.com"
 DESCRIPTION = ""

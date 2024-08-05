@@ -1,6 +1,6 @@
 from typing import Union
 import numpy as np
-import pytrispectral as ts
+import trispectral as ts
 
 __all__ = ["oss_cartesian_matrices", "oss_cylindrical_matrices"]
 
@@ -20,7 +20,7 @@ def oss_cartesian_matrices(
     ----------
     flow: str
         Flow type ("poiseuille" or "couette").
-    grid: pytrispectral.Grid
+    grid: trispectral.Grid
         1D Cartesian grid.
     Re: float, default = 5000.0
         Reynolds number.
@@ -104,7 +104,7 @@ def oss_cylindrical_matrices(
 
     Parameters
     ----------
-    grid: pytrispectral.Grid
+    grid: trispectral.Grid
         1D radial grid. For the sake of testing, here, we require that the grid
         contains the centerline point r = 0.
     Re: float, default = 2000.0
