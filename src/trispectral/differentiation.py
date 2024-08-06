@@ -422,7 +422,7 @@ def divergence_operator(
     stack: bool = True,
 ):
     mats = gradient_operator(
-        grid, wavevector, accuracy, symmetry, parities, stack=False
+        grid, accuracy, symmetry, parities, wavevector, stack=False
     )
 
     if "radial" in grid.geom or "polar" in grid.geom:
