@@ -497,9 +497,19 @@ def scalar_laplacian_operator(
             for axis in range(grid.num_dim)
         ]
     else:
+        wavevector = [
+            (None, element) if isinstance(element, Number)
+            else element for element in wavevector
+        ]
+
         mats = []
         for axis, k in wavevector:
-            if axis < grid.num_dim:
+            if axis is not None:
+                if axis >= grid.num_dim:
+                    raise ValueError(
+                        f"Axis {axis} is out of bounds for grid "
+                        f"with {grid.num_dim} dimension(s)"
+                    )
                 if k is not None:
                     raise ValueError(
                         f"Could not impose periodic direction for axis {axis} "
@@ -540,7 +550,10 @@ def scalar_laplacian_operator(
         )
         mats[0] = (ri**2)[:, np.newaxis] * mats[0]
 
-    return np.sum(mats, axis=0)
+    mats = np.sum(mats, axis=0).view(DifferentialMatrix)
+    mats.order = 2
+
+    return mats
 
 
 def vector_laplacian_operator(
