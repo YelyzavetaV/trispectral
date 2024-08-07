@@ -295,8 +295,8 @@ class DifferentialMatrix(np.ndarray):
             return
 
         self._num = None
-        self.orders = None
-        self.discs = None
+        self.axis = None
+        self.order = None
 
     @property
     def num(self):
@@ -348,6 +348,45 @@ def gradient_operator(
     wavevector: Union[None, tuple] = None,
     stack: bool = True,
 ):
+    """
+    Construct the gradient operator for a given grid.
+
+    Parameters
+    ----------
+    grid: trispectral.Grid
+        Numerical grid.
+    accuracy: Union[None, int], default = None
+        Accuracy of finite difference method if relevant.
+    symmetry: Union[None, str], default = None
+        Polar symmetry of the scalar field (only relevant for grid geometries
+        'radial' and 'polar').
+    parities: list, default = [1, 1, 1]
+        Parities of vector components in circular geometry. Since parity of a
+        scalar field is 1 (see ...), the default values should always be used
+        to construct the gradient operator. However, if the components of the
+        nabla operator are seeked instead, different parities can be imposed.
+    wavevector: Union[None, tuple], default = None
+        Components of 3D wavevector in the case of one or more homogeneous
+        directions, such that f  ̴ exp(ikx), where f is an arbitrary grid
+        function, k is the wavevector, and x is the position vector. The
+        wavevector, is specified, must be passed as an array-like containing
+        three elements, corresponding to each dimension. The elements
+        corresponding to inhomogeneous dimensions must take form of arrays-like
+        with two elements - the index of the respectivegrid axis and None (see
+        Examples).
+    stack: bool, default = True
+        Whether to return the gradient operator as a 3N⨉N array of type
+        DifferentialMatrix (if True) or as a list containing three N⨉N arrays
+        of type DifferentialMatrix.
+
+    Returns
+    -------
+    Gradient operator as a 3N⨉N DifferentialMatrix (is stack=True) or a list
+    containing three N⨉N DifferentialMatrix (if stack=False).
+
+    Examples
+    --------
+    """
     if wavevector is None:
         mats = [
             DifferentialMatrix(
@@ -408,9 +447,10 @@ def gradient_operator(
         mats[0] = ri[:, np.newaxis] * mats[0]
 
     if stack:
-        return np.vstack(mats)
-    else:
-        return mats
+        mats = np.vstack(mats).view(DifferentialMatrix)
+        mats.order = 1
+
+    return mats
 
 
 def divergence_operator(
@@ -431,9 +471,10 @@ def divergence_operator(
         mats[1] = mats[1] + ri[:, np.newaxis] * np.identity(mats[1].shape[0])
 
     if stack:
-        return np.hstack(mats)
-    else:
-        return mats
+        mats = np.hstack(mats).view(DifferentialMatrix)
+        mats.order = 1
+
+    return mats
 
 
 def scalar_laplacian_operator(
