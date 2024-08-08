@@ -576,7 +576,7 @@ def vector_laplacian_operator(
             0 + axis * npts : npts + axis * npts,
             0 + axis * npts : npts + axis * npts,
         ] = scalar_laplacian_operator(
-            grid, wavevector, accuracy, symmetry, parities[axis]
+            grid, accuracy, symmetry, parities[axis], wavevector
         )
 
     if "radial" in grid.geom or "polar" in grid.geom:
@@ -611,7 +611,7 @@ def vector_laplacian_operator(
         mats[:npts, npts : 2 * npts] = 2 * (ri**2)[:, np.newaxis] * d
         mats[npts : 2 * npts, :npts] = -2 * (ri**2)[:, np.newaxis] * d
 
-    return mats
+    return mats.view(DifferentialMatrix)
 
 
 def _directional_derivative_operator_from_a(
@@ -632,9 +632,18 @@ def _directional_derivative_operator_from_a(
 
     for axis in range(ndim):
         g = gradient_operator(
-            grid, wavevector, accuracy, symmetry, parities[axis], stack=False
+            grid,
+            accuracy,
+            symmetry,
+            parities=3 * [parities[axis]],
+            wavevector=wavevector,
+            stack=False,
         )
-        g = [a[j][:, np.newaxis] * g[j] for j in range(ndim)]
+        g = [
+            a[
+                0 + j * npts : npts + j * npts
+            ][:, np.newaxis] * g[j] for j in range(ndim)
+        ]
         g = np.sum(g, axis=0)
 
         mats[
@@ -674,13 +683,18 @@ def _directional_derivative_operator_from_b(
     for axis in range(ndim):
         g = gradient_operator(
             grid,
-            wavevector,
             accuracy,
             symmetry,
-            parities=[parities[axis]] * ndim,
+            parities=3 * [parities[axis]],
+            wavevector=wavevector,
             stack=False,
         )
-        g = np.hstack([g[j] @ b[axis] for j in range(ndim)])
+        g = np.hstack(
+            [
+                np.diag(g[j] @ b[0 + axis * npts : npts + axis * npts])
+                for j in range(ndim)
+            ]
+        )
 
         mats[0 + axis * npts : npts + axis * npts] = g
 
@@ -708,9 +722,9 @@ def directional_derivative_operator(
         raise ValueError("Either only a or only b must be specified")
     elif a is not None:
         return _directional_derivative_operator_from_a(
-            grid, a, wavevector, accuracy, symmetry, parities
+            grid, a, accuracy, symmetry, parities, wavevector
         )
     else:
         return _directional_derivative_operator_from_b(
-            grid, b, wavevector, accuracy, symmetry, parities
+            grid, b, accuracy, symmetry, parities, wavevector
         )
