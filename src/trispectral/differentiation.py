@@ -661,7 +661,7 @@ def _directional_derivative_operator_from_a(
             :, np.newaxis
         ] * np.identity(npts)
 
-    return mats
+    return mats.view(DifferentialMatrix)
 
 
 def _directional_derivative_operator_from_b(
@@ -706,7 +706,7 @@ def _directional_derivative_operator_from_b(
             :, np.newaxis
         ] * np.identity(npts)
 
-    return mats
+    return mats.view(DifferentialMatrix)
 
 
 def directional_derivative_operator(
