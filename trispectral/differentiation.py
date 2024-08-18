@@ -616,7 +616,7 @@ def vector_laplacian_operator(
 
 def _directional_derivative_operator_from_a(
     grid: Grid,
-    a: tuple,
+    a: np.ndarray,
     accuracy: Union[None, int] = None,
     symmetry: Union[None, str] = None,
     parities: list = [-1, -1, 1],
@@ -646,6 +646,8 @@ def _directional_derivative_operator_from_a(
         ]
         g = np.sum(g, axis=0)
 
+        mats = mats.astype(g.dtype)
+
         mats[
             0 + axis * npts : npts + axis * npts,
             0 + axis * npts : npts + axis * npts,
@@ -666,7 +668,7 @@ def _directional_derivative_operator_from_a(
 
 def _directional_derivative_operator_from_b(
     grid: Grid,
-    b: tuple,
+    b: np.ndarray,
     accuracy: Union[None, int] = None,
     symmetry: Union[None, str] = None,
     parities: list = [-1, -1, 1],
@@ -696,6 +698,7 @@ def _directional_derivative_operator_from_b(
             ]
         )
 
+        mats = mats.astype(g.dtype)
         mats[0 + axis * npts : npts + axis * npts] = g
 
     if "radial" in grid.geom or "polar" in grid.geom:
@@ -711,8 +714,8 @@ def _directional_derivative_operator_from_b(
 
 def directional_derivative_operator(
     grid: Grid,
-    a: Union[None, tuple] = None,
-    b: Union[None, tuple] = None,
+    a: Union[None, np.ndarray] = None,
+    b: Union[None, np.ndarray] = None,
     accuracy: Union[None, int] = None,
     symmetry: Union[None, str] = None,
     parities: list = [-1, -1, 1],
