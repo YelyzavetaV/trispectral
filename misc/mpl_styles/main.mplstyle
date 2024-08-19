@@ -1,0 +1,24 @@
+font.size    : 12
+font.family  : serif
+font.style   : oblique
+# font.serif   : Times New Roman
+
+text.usetex : True
+
+legend.frameon  : False
+legend.fontsize : 8
+
+lines.markersize : 5
+lines.linewidth : 1
+
+#lines.color     : black
+#lines.markeredgewidth : 2.5   ## the line width around the marker symbol
+
+axes.titlesize  : 16
+axes.labelsize  : 16
+axes.prop_cycle : cycler('color', ['000000'])
+axes.linewidth  : 0.8
+
+# Size of points' labels.
+xtick.labelsize : 14
+ytick.labelsize : 14

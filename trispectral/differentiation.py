@@ -67,6 +67,7 @@ __all__ = [
     "scalar_laplacian_operator",
     "vector_laplacian_operator",
     "directional_derivative_operator",
+    "curl_operator",
 ]
 
 
@@ -573,8 +574,8 @@ def vector_laplacian_operator(
 
     for axis in range(ndim):
         mats[
-            0 + axis * npts : npts + axis * npts,
-            0 + axis * npts : npts + axis * npts,
+            axis * npts : npts + axis * npts,
+            axis * npts : npts + axis * npts,
         ] = scalar_laplacian_operator(
             grid, accuracy, symmetry, parities[axis], wavevector
         )
@@ -731,3 +732,92 @@ def directional_derivative_operator(
         return _directional_derivative_operator_from_b(
             grid, b, accuracy, symmetry, parities, wavevector
         )
+
+
+def _curl_line(
+    grid: Grid,
+    axis: int,
+    accuracy: Union[None, int] = None,
+    symmetry: Union[None, str] = None,
+    parities: list = [-1, -1, 1],
+    wavevector: Union[None, tuple] = None,
+):
+    npts = np.prod(grid.npts)
+    if "radial" in grid.geom or "polar" in grid.geom:
+        npts = npts / 2
+
+    axes = 0, 1, 2
+
+    if wavevector is None:
+        wavevector = [(axis, None) for axis in axes]
+    wavevector = [
+        (None, element) if isinstance(element, Number)
+        else element for element in wavevector
+    ]
+
+    if wavevector[(axis - 1) % 3][1] is None:
+        a = -DifferentialMatrix(
+            grid,
+            axis=axes[(axis - 1) % 3],
+            order=1,
+            accuracy=accuracy,
+            parity=parities[(axis + 1) % 3],
+            symmetry=symmetry,
+        )
+    else:
+        a = -DifferentialMatrix(
+            grid,
+            order=0,
+            accuracy=accuracy,
+            parity=parities[(axis + 1) % 3],
+            symmetry=symmetry,
+        ) * 1j * wavevector[(axis - 1) % 3][1]
+
+    if wavevector[(axis + 1) % 3][1] is None:
+        b = DifferentialMatrix(
+            grid,
+            axis=axes[(axis + 1) % 3],
+            order=1,
+            accuracy=accuracy,
+            parity=parities[(axis + 2) % 3],
+            symmetry=symmetry,
+        )
+    else:
+        b = DifferentialMatrix(
+            grid,
+            order=0,
+            accuracy=accuracy,
+            parity=parities[(axis + 2) % 3],
+            symmetry=symmetry,
+        ) * 1j * wavevector[(axis + 1) % 3][1]
+
+    return np.roll(
+        np.hstack([np.zeros([npts, npts]), a, b]), axis * npts, axis=1
+    )
+
+
+def curl_operator(
+    grid: Grid,
+    accuracy: Union[None, int] = None,
+    symmetry: Union[None, str] = None,
+    parities: list = [-1, -1, 1],
+    wavevector: Union[None, tuple] = None,
+):
+    npts = np.prod(grid.npts)
+    if "radial" in grid.geom or "polar" in grid.geom:
+        npts = npts / 2
+
+    ndim = grid.num_dim if wavevector is None else 3
+    if ndim < 3:
+        raise ValueError("Curl operator is defined uniquely in 3D space")
+
+    mats = np.empty([ndim * npts, ndim * npts])
+
+    for axis in range(ndim):
+        mats[
+            axis * npts : npts + axis * npts,
+        ] = _curl_line(
+            grid, axis, accuracy, symmetry, parities, wavevector
+        )
+
+    return mats.view(DifferentialMatrix)

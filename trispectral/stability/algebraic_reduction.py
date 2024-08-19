@@ -63,42 +63,10 @@ def reduced_linear_operator(
 
     velocity_operator = convection + 1 / reynolds * laplacian
 
-    # Apply BC.
-    match grid.geom:
-        case "cart":
-            if grid.num_dim > 3:
-                raise NotImplementedError(
-                    "Case with grid.num_dim > 3 not implemented"
-                )
+    bnd = grid.argbnd() # find boundary nodes
 
-            bnd = [
-                np.argwhere(grid[axis] == grid[axis][0]).ravel()
-                for axis in range(grid.num_dim)
-            ] + [
-                np.argwhere(grid[axis] == grid[axis][-1]).ravel()
-                for axis in range(grid.num_dim)
-            ]
-
-            # Take care of the corner nodes: xy-corners belong to y-boundaries,
-            # xz-corners -- to z-boundaries, and yz-corners -- to z-boundaries.
-            if grid.num_dim > 1:
-                for i in range(grid.num_dim - 1):
-                    for j in range(1, grid.num_dim):
-                        if i == j: # 'degenerate' case
-                            continue
-                        bnd[i] = bnd[i][~np.isin(bnd[i], bnd[j])]
-                        bnd[i] = bnd[i][~np.isin(bnd[i], bnd[grid.num_dim + j])]
-                        bnd[grid.num_dim + i] = bnd[grid.num_dim + i][
-                            ~np.isin(bnd[grid.num_dim + i], bnd[j])
-                        ]
-                        bnd[grid.num_dim + i] = bnd[grid.num_dim + i][
-                            ~np.isin(bnd[grid.num_dim + i], bnd[grid.num_dim + j])
-                        ]
-
-            # Assume the same BC for all boundaries.
-            bnd = np.concatenate(bnd)
-        case _:
-            raise ValueError(f"Unknown geometry {grid.geom}")
+    # Assume the same BC for all boundaries.
+    bnd = np.concatenate(bnd)
 
     npts = np.prod(grid.npts)
     if "radial" in grid.geom or "polar" in grid.geom:

@@ -554,6 +554,52 @@ class Grid(np.ndarray):
 
         return pts
 
+    def argbnd(self, axis: Union[None, int] = None):
+        match self.geom:
+            case "cart":
+                if self.num_dim > 3:
+                    raise NotImplementedError(
+                        "Case with grid.num_dim > 3 not implemented"
+                    )
+
+                bnds = [
+                    np.argwhere(self[axis] == self[axis][0]).ravel()
+                    for axis in range(self.num_dim)
+                ] + [
+                    np.argwhere(self[axis] == self[axis][-1]).ravel()
+                    for axis in range(self.num_dim)
+                ]
+
+                # Take care of corner nodes: xy-corners belong to y-boundaries,
+                # xz-corners -- to z-boundaries, and yz-corners -- to z-boundaries.
+                if self.num_dim > 1:
+                    for i in range(self.num_dim - 1):
+                        for j in range(1, self.num_dim):
+                            if i == j: # 'degenerate' case
+                                continue
+                            bnds[i] = bnds[i][~np.isin(bnds[i], bnds[j])]
+                            bnds[i] = bnds[i][
+                                ~np.isin(bnds[i], bnds[self.num_dim + j])
+                            ]
+                            bnds[self.num_dim + i] = bnds[self.num_dim + i][
+                                ~np.isin(bnds[self.num_dim + i], bnds[j])
+                            ]
+                            bnds[self.num_dim + i] = bnds[self.num_dim + i][
+                                ~np.isin(
+                                    bnds[self.num_dim + i], bnds[self.num_dim + j]
+                                )
+                            ]
+
+                    bnds = [
+                        (bnds[i], bnds[i + self.num_dim])
+                        for i in range(self.num_dim)
+                    ]
+
+        if axis is not None:
+            return bnds[axis]
+        else:
+            return bnds
+
     def weights(
         self,
         axis: int = 0,
