@@ -554,7 +554,7 @@ class Grid(np.ndarray):
 
         return pts
 
-    def argbnd(self, axis: Union[None, int] = None):
+    def boundary_indices(self, axis: Union[None, int] = None):
         match self.geom:
             case "cart":
                 if self.num_dim > 3:
@@ -590,10 +590,15 @@ class Grid(np.ndarray):
                                 )
                             ]
 
-                    bnds = [
-                        (bnds[i], bnds[i + self.num_dim])
-                        for i in range(self.num_dim)
-                    ]
+                bnds = [
+                    (bnds[i], bnds[i + self.num_dim])
+                    for i in range(self.num_dim)
+                ]
+            case "polar":
+                r = self[1, self[1] > 0]
+
+                bnds = np.argwhere(r == 1).ravel()
+                bnds = [None, bnds]
 
         if axis is not None:
             return bnds[axis]

@@ -4,7 +4,6 @@ import numpy as np
 from scipy.linalg import inv, qr
 from ..grid import Grid
 from ..differentiation import (
-    DifferentialMatrix,
     gradient_operator,
     divergence_operator,
     vector_laplacian_operator,
@@ -17,7 +16,8 @@ def reduced_linear_operator(
     grid: Grid,
     flow: np.ndarray,
     wavevector: Union[None, tuple] = None,
-    reynolds: float = 2000.,
+    reynolds_number: float = 2000.,
+    external_force_operator: Union[None, np.ndarray] = None,
     accuracy: Union[None, int] = None,
     symmetry: Union[None, str] = None,
     parities: list = [-1, -1, 1],
@@ -61,30 +61,39 @@ def reduced_linear_operator(
         wavevector=basevector
     )
 
-    velocity_operator = convection + 1 / reynolds * laplacian
+    velocity_operator = -convection + 1 / reynolds_number * laplacian
 
-    bnd = grid.argbnd() # find boundary nodes
+    if external_force_operator is not None:
+        velocity_operator += external_force_operator
 
-    # Assume the same BC for all boundaries.
-    bnd = np.concatenate(bnd)
+    bnds = grid.boundary_indices() # find boundary nodes
+
+    match grid.geom:
+        case "cart":
+            # Assume the same BC for all boundaries.
+            bnds = np.concatenate([np.concatenate(bnd) for bnd in bnds])
+        case "polar":
+            bnds = bnds[1]
+        case _:
+            raise ValueError(f"Grid geometry {grid.geom} not supported")
 
     npts = np.prod(grid.npts)
     if "radial" in grid.geom or "polar" in grid.geom:
-        npts = npts / 2
+        npts = int(npts / 2)
 
     O, I = np.zeros([npts, npts]), np.identity(npts)
 
     # No-slip everywhere.
-    velocity_operator[bnd] = bc_vals * np.hstack([I[bnd], O[bnd], O[bnd]])
-    velocity_operator[bnd + npts] = bc_vals * np.hstack(
-        [O[bnd], I[bnd], O[bnd]]
+    velocity_operator[bnds] = bc_vals * np.hstack([I[bnds], O[bnds], O[bnds]])
+    velocity_operator[bnds + npts] = bc_vals * np.hstack(
+        [O[bnds], I[bnds], O[bnds]]
     )
-    velocity_operator[bnd + 2 * npts] = bc_vals * np.hstack(
-        [O[bnd], O[bnd], I[bnd]]
+    velocity_operator[bnds + 2 * npts] = bc_vals * np.hstack(
+        [O[bnds], O[bnds], I[bnds]]
     )
-    gradient[bnd] = gradient[bnd + npts] = gradient[bnd + 2 * npts] = 0
+    gradient[bnds] = gradient[bnds + npts] = gradient[bnds + 2 * npts] = 0
 
-    u, _ = qr(gradient)
+    u, _ = qr(-gradient)
     v, _ = qr(np.conj(divergence).T)
     u, v = u[:, npts:], v[:, npts:]
 

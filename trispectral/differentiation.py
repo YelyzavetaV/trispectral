@@ -205,13 +205,13 @@ class DifferentialMatrix(np.ndarray):
         axis: int = 0,
         order: int = 1,
         accuracy: Union[None, int] = None,
-        parity: Union[None, int] = None,
+        parity: int = 1,
         symmetry: Union[None, str] = None,
         **kwargs,
     ):
         mats = [np.eye(grid.npts[axis]) for axis in range(grid.num_dim)]
 
-        if order > 0:  # if 1, identity matrix is returned
+        if order > 0:  # if 0, identity matrix is returned
             disc = grid.discs[axis]
             # If the user specified the accuracy, pass it as a keyword argument.
             if accuracy is not None:
@@ -259,14 +259,6 @@ class DifferentialMatrix(np.ndarray):
 
                     obj = nkron(*mats)
                 elif axis == 1:
-                    if parity is None:
-                        warnings.warn(
-                            "The parity of radial derivatives not specified "
-                            "(see documentation) - using default value 1",
-                            RuntimeWarning,
-                        )
-                        parity = 1
-
                     # pmats contain a slice of a radial differential matrix related to a
                     # "positive" half of an extended radial domain.
                     pmats, nmats = deepcopy(mats), deepcopy(mats)
@@ -345,7 +337,7 @@ def gradient_operator(
     grid: Grid,
     accuracy: Union[None, int] = None,
     symmetry: Union[None, str] = None,
-    parities: list = [1, 1, 1],
+    parities: tuple = (1, 1, 1),
     wavevector: Union[None, tuple] = None,
     stack: bool = True,
 ):
@@ -458,7 +450,7 @@ def divergence_operator(
     grid: Grid,
     accuracy: Union[None, int] = None,
     symmetry: Union[None, str] = None,
-    parities: list = [-1, -1, 1],
+    parities: tuple = (-1, -1, 1),
     wavevector: Union[None, tuple] = None,
     stack: bool = True,
 ):
@@ -566,7 +558,7 @@ def vector_laplacian_operator(
 ):
     npts = np.prod(grid.npts)
     if "radial" in grid.geom or "polar" in grid.geom:
-        npts = npts / 2
+        npts = int(npts / 2)
 
     ndim = grid.num_dim if wavevector is None else 3
 
@@ -583,12 +575,12 @@ def vector_laplacian_operator(
     if "radial" in grid.geom or "polar" in grid.geom:
         ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
 
-        mats[:npts, :npts] -= ri[:, np.newaxis] * np.identity(npts)
+        mats[:npts, :npts] -= ri[:, np.newaxis]**2 * np.identity(npts)
         mats[npts : 2 * npts, npts : 2 * npts] -= ri[
             :, np.newaxis
-        ] * np.identity(npts)
+        ]**2 * np.identity(npts)
 
-        if wavevector[0][1] is None:
+        if wavevector is None or wavevector[0][1] is None:
             d = DifferentialMatrix(
                 grid,
                 axis=0,
@@ -625,7 +617,7 @@ def _directional_derivative_operator_from_a(
 ):
     npts = np.prod(grid.npts)
     if "radial" in grid.geom or "polar" in grid.geom:
-        npts = npts / 2
+        npts = int(npts / 2)
 
     ndim = grid.num_dim if wavevector is None else 3
 
@@ -677,7 +669,7 @@ def _directional_derivative_operator_from_b(
 ):
     npts = np.prod(grid.npts)
     if "radial" in grid.geom or "polar" in grid.geom:
-        npts = npts / 2
+        npts = int(npts / 2)
 
     ndim = grid.num_dim if wavevector is None else 3
 
@@ -744,7 +736,7 @@ def _curl_line(
 ):
     npts = np.prod(grid.npts)
     if "radial" in grid.geom or "polar" in grid.geom:
-        npts = npts / 2
+        npts = int(npts / 2)
 
     axes = 0, 1, 2
 
@@ -805,7 +797,7 @@ def curl_operator(
 ):
     npts = np.prod(grid.npts)
     if "radial" in grid.geom or "polar" in grid.geom:
-        npts = npts / 2
+        npts = int(npts / 2)
 
     ndim = grid.num_dim if wavevector is None else 3
     if ndim < 3:
