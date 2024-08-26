@@ -45,8 +45,6 @@ matrices. Get an instance of a matrix by calling on of the two methods
     **kwargs,
 )
 """
-
-import warnings
 from typing import Union
 from operator import index
 from copy import deepcopy
@@ -604,7 +602,10 @@ def vector_laplacian_operator(
         mats[:npts, npts : 2 * npts] = 2 * (ri**2)[:, np.newaxis] * d
         mats[npts : 2 * npts, :npts] = -2 * (ri**2)[:, np.newaxis] * d
 
-    return mats.view(DifferentialMatrix)
+    mats = mats.view(DifferentialMatrix)
+    mats.order = 1
+
+    return mats
 
 
 def _directional_derivative_operator_from_a(
@@ -656,7 +657,10 @@ def _directional_derivative_operator_from_a(
             :, np.newaxis
         ] * np.identity(npts)
 
-    return mats.view(DifferentialMatrix)
+    mats = mats.view(DifferentialMatrix)
+    mats.order = 1
+
+    return mats
 
 
 def _directional_derivative_operator_from_b(
@@ -702,7 +706,10 @@ def _directional_derivative_operator_from_b(
             :, np.newaxis
         ] * np.identity(npts)
 
-    return mats.view(DifferentialMatrix)
+    mats = mats.view(DifferentialMatrix)
+    mats.order = 0
+
+    return mats
 
 
 def directional_derivative_operator(
@@ -799,11 +806,17 @@ def curl_operator(
     if "radial" in grid.geom or "polar" in grid.geom:
         npts = int(npts / 2)
 
-    ndim = grid.num_dim if wavevector is None else 3
+    if wavevector is None:
+        ndim = grid.num_dim
+        dtype = float
+    else:
+        ndim = 3
+        dtype = complex
+
     if ndim < 3:
         raise ValueError("Curl operator is defined uniquely in 3D space")
 
-    mats = np.empty([ndim * npts, ndim * npts])
+    mats = np.empty([ndim * npts, ndim * npts], dtype=dtype)
 
     for axis in range(ndim):
         mats[
@@ -812,4 +825,17 @@ def curl_operator(
             grid, axis, accuracy, symmetry, parities, wavevector
         )
 
-    return mats.view(DifferentialMatrix)
+    if "radial" in grid.geom or "polar" in grid.geom:
+        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+
+        mats = -mats
+
+        mats[
+            npts : 2 * npts, 2 * npts :
+        ] = ri[:, np.newaxis] * mats[npts : 2 * npts, 2 * npts :]
+        mats[2 * npts :, : npts] += ri[:, np.newaxis] * np.identity(npts)
+
+    mats = mats.view(DifferentialMatrix)
+    mats.order = 1
+
+    return mats

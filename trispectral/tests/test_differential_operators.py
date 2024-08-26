@@ -11,60 +11,53 @@ from trispectral import (
 )
 
 
-GRID_2D_CART = Grid.from_bounds(
+grid_2D_cheb = Grid.from_bounds(
     [-2., 2., 41], [-2., 2., 41], discs=["chebyshev"] * 2
 )
-X_2D_CART, Y_2D_CART = GRID_2D_CART
+x_2D_cheb, y_2D_cheb = grid_2D_cheb
 
-F_2D_CART = X_2D_CART * np.exp(-X_2D_CART**2 - Y_2D_CART**2)
-G_2D_CART = np.concatenate(
+f_2D_cheb = x_2D_cheb * np.exp(-x_2D_cheb**2 - y_2D_cheb**2)
+g_2D_cheb = np.concatenate(
     [
-        np.exp(-X_2D_CART**2 - Y_2D_CART**2) - 2 * X_2D_CART * F_2D_CART,
-        -2 * Y_2D_CART * F_2D_CART,
+        np.exp(-x_2D_cheb**2 - y_2D_cheb**2) - 2 * x_2D_cheb * f_2D_cheb,
+        -2 * y_2D_cheb * f_2D_cheb,
     ]
 )
-U_2D_CART = np.concatenate(
+u_2D_cheb = np.concatenate(
     [
-        X_2D_CART + 3 * Y_2D_CART,
-        -Y_2D_CART - 2 * X_2D_CART,
+        x_2D_cheb + 3 * y_2D_cheb,
+        -y_2D_cheb - 2 * x_2D_cheb,
     ]
 )
-D_2D_CART = np.zeros_like(X_2D_CART)
+d_2D_cheb = np.zeros_like(x_2D_cheb)
 
-GRID_3D_CART = Grid.from_bounds(
-    [0., 1., 21], [-1., 1., 21], [-np.pi, np.pi, 21], discs=3 * ["chebyshev"]
-)
-X_3D_CART, Y_3D_CART, Z_3D_CART = GRID_3D_CART
+grid_1D_cheb_wave = Grid.from_bounds([-1., 1., 41], discs=["chebyshev"])
+y_1D_cheb_wave = grid_1D_cheb_wave[0]
 
-F_3D_CART = 2 * X_3D_CART + 3 * Y_3D_CART**2 - np.sin(Z_3D_CART)
-G_3D_CART = np.concatenate(
+k_1D_cheb_wave = 1., [0, None], 2.
+f_1D_cheb_wave = 1 - y_1D_cheb_wave**2
+g_1D_cheb_wave = np.concatenate(
     [
-        np.full_like(X_3D_CART, 2.),
-        6 * Y_3D_CART,
-        -np.cos(Z_3D_CART),
+        1j * k_1D_cheb_wave[0] * f_1D_cheb_wave,
+        -2 * y_1D_cheb_wave,
+        1j * k_1D_cheb_wave[2] * f_1D_cheb_wave,
     ]
 )
 
-GRID_1D_CART_WAVE = Grid.from_bounds([-1., 1., 41], discs=["chebyshev"])
-Y_1D_CART_WAVE = GRID_1D_CART_WAVE[0]
 
-K_1D_CART = 1., [0, None], 2.
-F_1D_CART_WAVE = 1 - Y_1D_CART_WAVE**2
-G_1D_CART_WAVE = np.concatenate(
-    [
-        1j * K_1D_CART[0] * F_1D_CART_WAVE,
-        -2 * Y_1D_CART_WAVE,
-        1j * K_1D_CART[2] * F_1D_CART_WAVE,
-    ]
-)
+GRIDS = (grid_2D_cheb, grid_1D_cheb_wave)
+SCALARS = (f_2D_cheb, f_1D_cheb_wave)
+VECTORS = (u_2D_cheb,)
+GRADS = (g_2D_cheb, g_1D_cheb_wave)
+DIVS = (d_2D_cheb,)
+WAVEVECTORS = (None, k_1D_cheb_wave)
 
 
 @pytest.mark.parametrize(
     "grid,field,exact,wavevector",
     [
-        (GRID_2D_CART, F_2D_CART, G_2D_CART, None),
-        (GRID_3D_CART, F_3D_CART, G_3D_CART, None),
-        (GRID_1D_CART_WAVE, F_1D_CART_WAVE, G_1D_CART_WAVE, K_1D_CART),
+        (GRIDS[0], SCALARS[0], GRADS[0], WAVEVECTORS[0]),
+        (GRIDS[1], SCALARS[1], GRADS[1], WAVEVECTORS[1]),
     ]
 )
 def test_gradient_operator(grid, field, exact, wavevector):
@@ -75,7 +68,7 @@ def test_gradient_operator(grid, field, exact, wavevector):
 @pytest.mark.parametrize(
     "grid,field,exact,wavevector",
     [
-        (GRID_2D_CART, U_2D_CART, D_2D_CART, None),
+        (GRIDS[0], VECTORS[0], DIVS[0], WAVEVECTORS[0]),
     ]
 )
 def test_divergence_operator(grid, field, exact, wavevector):
