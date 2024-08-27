@@ -10,14 +10,6 @@ LICENSE = ""
 VERSION = "1.0.0"
 LONG_DESCRIPTION = ""
 
-NUMPY_MIN_VERSION = "1.26.4"
-SCIPY_MIN_VERSION = "1.11.3"
-
-min_dependent_packages = {
-    "numpy": NUMPY_MIN_VERSION,
-    "scipy": SCIPY_MIN_VERSION,
-}
-
 
 def setup_package():
     python_requires = ">=3.12"
@@ -51,7 +43,11 @@ def setup_package():
         ],
         python_requires=python_requires,
         install_requires=[
-            f"{p} >= {v}" for (p, v) in min_dependent_packages.items()
+            "numpy >= 1.26.4",
+            "scipy >= 1.11.3",
+            "pytest",
+            "matplotlib",
+            "pandas",
         ],
     )
 

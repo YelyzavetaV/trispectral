@@ -1,5 +1,7 @@
 # Trispectral
 
+[![tests](https://github.com/YelyzavetaV/trispectral/actions/workflows/tests.yml/badge.svg)](https://github.com/YelyzavetaV/trispectral/actions/workflows/tests.yml)
+
 Trispectral is a NumPy-based Python package for numerical differentiation using spectral collocation methods.
 
 The user interface of Trispectral is compact and intuitive. For example, consider the function $f(x,y) = xe^{-(x^2 + y^2)}$ for $-1 \le x, y \le 1$. Using Trispectral we can compute the gradient of $f$ as follows:
