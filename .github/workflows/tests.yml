@@ -35,4 +35,4 @@ jobs:
           pip install --no-cache .
       - name: test using pytest
         run: |
-          pytest -v
+          pytest -v --cov=src --cov-report=xml
