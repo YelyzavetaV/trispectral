@@ -1,4 +1,6 @@
-# <p style="text-align: center;"><span style="color:blue">Tris</span><span style="color:green"></span><span style="color:E0E31D">pectral</span></p>
+<h1 align="center">
+    <span style="color:blue">Tris</span><span style="color:green"></span><span style="color:E0E31D">pectral</span>
+</h1>
 
 [![tests](https://github.com/YelyzavetaV/trispectral/actions/workflows/tests.yml/badge.svg)](https://github.com/YelyzavetaV/trispectral/actions/workflows/tests.yml)
 [![coverage](https://codecov.io/github/YelyzavetaV/trispectral/graph/badge.svg?token=gFMctOGnuv)](https://codecov.io/github/YelyzavetaV/trispectral)
