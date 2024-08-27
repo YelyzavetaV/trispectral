@@ -1,6 +1,7 @@
 # Trispectral
 
 [![tests](https://github.com/YelyzavetaV/trispectral/actions/workflows/tests.yml/badge.svg)](https://github.com/YelyzavetaV/trispectral/actions/workflows/tests.yml)
+[![coverage](https://codecov.io/github/YelyzavetaV/trispectral/graph/badge.svg?token=gFMctOGnuv)](https://codecov.io/github/YelyzavetaV/trispectral)
 
 Trispectral is a NumPy-based Python package for numerical differentiation using spectral collocation methods.
 
