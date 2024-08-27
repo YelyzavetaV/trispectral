@@ -2,36 +2,6 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[project]
-name = "trispectral"
-version = "1.0.0"
-license = {file = "LICENSE.txt"}
-
-description = ""
-authors = [{name = "Y. Velizhanina and B. Knaepen"}]
-maintainers = [
-    {name = "", email="velizhaninae@gmail.com"},
-]
-requires-python = ">=3.12"
-readme = "README.md"
-classifiers = [
-    'Intended Audience :: Science/Research',
-    'Intended Audience :: Developers',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.10',
-    'Programming Language :: Python :: 3.11',
-    'Programming Language :: Python :: 3.12',
-    'Programming Language :: Python :: 3 :: Only',
-    'Programming Language :: Python :: Implementation :: CPython',
-    'Topic :: Software Development',
-    'Topic :: Scientific/Engineering',
-    'Operating System :: Microsoft :: Windows',
-    'Operating System :: POSIX',
-    'Operating System :: Unix',
-    'Operating System :: MacOS',
-]
-
 [tool.black]
 line-length = 80
 target-version = ['py310', 'py311', 'py312']

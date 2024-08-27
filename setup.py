@@ -11,17 +11,13 @@ VERSION = "1.0.0"
 LONG_DESCRIPTION = ""
 
 
-def setup_package():
-    python_requires = ">=3.12"
-
-    metadata = dict(
+if __name__ == "__main__":
+    setup(
         name=NAME,
         maintainer=MAINTAINER,
         maintainer_email=MAINTAINER_EMAIL,
         description=DESCRIPTION,
         license=LICENSE,
-        #        download_url=DOWNLOAD_URL,
-        #        project_urls=PROJECT_URLS,
         version=VERSION,
         long_description=LONG_DESCRIPTION,
         classifiers=[
@@ -41,7 +37,7 @@ def setup_package():
             "Operating System :: Unix",
             "Operating System :: MacOS",
         ],
-        python_requires=python_requires,
+        python_requires=">=3.12",
         install_requires=[
             "numpy >= 1.26.4",
             "scipy >= 1.11.3",
@@ -50,9 +46,3 @@ def setup_package():
             "pandas",
         ],
     )
-
-    setup(**metadata)
-
-
-if __name__ == "__main__":
-    setup_package()
