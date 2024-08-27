@@ -42,7 +42,7 @@ if __name__ == "__main__":
             "numpy >= 1.26.4",
             "scipy >= 1.11.3",
             "pytest",
-            "pytest-cov",
+            "coverage",
             "matplotlib",
             "pandas",
         ],

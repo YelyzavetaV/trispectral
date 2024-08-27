@@ -35,7 +35,7 @@ jobs:
           pip install --no-cache .
       - name: test using pytest
         run: |
-          pytest -v --cov=trispectral --cov-report=xml
+          coverage run -m pytest --cov-report=xml
       - name: upload coverage
         uses: codecov/codecov-action@v4.2.0
         env:
