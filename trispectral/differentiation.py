@@ -53,11 +53,10 @@ import numpy as np
 from scipy.linalg import toeplitz
 from .manager import ObjectManager
 from .math_utils import nkron
-from .grid import cheb_bary_weights, Grid
+from .grid import Grid
 
 __all__ = [
     "cheb_mat",
-    "bary_cheb_mat",
     "four_mat",
     "DifferentialMatrix",
     "gradient_operator",
@@ -96,52 +95,6 @@ def cheb_mat(x, order, **kwargs) -> np.ndarray:
     mat -= np.diag(np.sum(mat, axis=1))
 
     return np.linalg.matrix_power(mat, order)
-
-
-def bary_cheb_mat(x, order, **kwargs) -> np.ndarray:
-    """Computes Chebyshev differential matrix using method described in [1].
-
-    References
-    ----------
-    [1] R. Baltensperger and M. A. Trummer, "Spectral Differencing with a Twist",
-        SIAM J. Sci. Comput., 2003.
-    """
-    nx = len(x)
-    w = cheb_bary_weights(nx)
-
-    a = np.arange(nx)[::-1] * np.pi / (nx - 1)
-    a = np.repeat(a[::-1], nx).reshape(nx, nx)
-
-    args = np.triu(np.ones(nx, dtype=int), k=1).T[:, ::-1]
-
-    dx = 2 * np.sin(a / 2 + a.T / 2) * np.sin(a / 2 - a.T / 2)
-    dx[args] = -dx[::-1, ::-1][args]
-    np.fill_diagonal(dx, 1)
-    dx = 1 / dx
-
-    w = np.repeat(w, nx).reshape(nx, nx)
-    dw = w.T / w
-    np.fill_diagonal(dw, 0)
-
-    d = dx * dw
-    np.fill_diagonal(d, 0)
-    np.fill_diagonal(d, -np.sum(d, axis=1))
-
-    k = np.diagonal(d).copy()
-    k[: nx - int(nx / 2) - 1 : -1] = -k.copy()[: int(nx / 2)]
-    np.fill_diagonal(d, k)
-
-    if order == 2:
-        d *= 2 * (np.repeat(k, nx).reshape(nx, nx) - dx)
-        np.fill_diagonal(d, 0)
-        np.fill_diagonal(d, -np.sum(d, axis=1))
-
-    if order > 2:
-        raise NotImplementedError(
-            f"Chebyshev matrix of order {order} not implemented"
-        )
-
-    return d
 
 
 def four_mat(x, order, **kwargs) -> np.ndarray:

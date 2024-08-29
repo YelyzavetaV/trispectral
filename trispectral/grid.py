@@ -41,7 +41,6 @@ from .math_utils import nkron
 __all__ = [
     "cheb_pts",
     "clenshaw_curtis_weights",
-    "cheb_bary_weights",
     "Grid",
 ]
 
@@ -120,30 +119,6 @@ def clenshaw_curtis_weights(nx: int) -> np.ndarray:
     w = np.fft.ifft(c)
     w[0] /= 2
     return np.append(w, w[0]).real
-
-
-def cheb_bary_weights(nx: int) -> np.ndarray:
-    """Barycentric weights for Chebyshev points [1].
-
-    Parameters
-    ----------
-    nx: int
-        Number of Chebyshev points.
-
-    Returns
-    -------
-    1D np.ndarray containing Chebyshev barycentric weights.
-
-    References
-    ----------
-    [1] R. Baltensperger and M. A. Trummer, "Spectral Differencing with a Twist",
-        SIAM J. Sci. Comput., 2003.
-    """
-    w = np.ones(nx)
-    w[-1] = 0.5
-    w[-2::-2] *= -1
-    w[0] *= 0.5
-    return w
 
 
 class Grid(np.ndarray):
