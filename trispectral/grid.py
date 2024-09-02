@@ -529,7 +529,9 @@ class Grid(np.ndarray):
 
         return pts
 
-    def boundary_indices(self, axis: Union[None, int] = None):
+    def boundary_indices(
+        self, axis: Union[None, int] = None, symmetry: Union[None, str] = None
+    ):
         match self.geom:
             case "cart":
                 if self.num_dim > 3:
@@ -570,7 +572,15 @@ class Grid(np.ndarray):
                     for i in range(self.num_dim)
                 ]
             case "polar":
-                r = self[1, self[1] > 0]
+                if symmetry is not None:
+                    if "pole" in symmetry:
+                        mask = (self[0] >= 0) & (self[1] > 0)
+                    else:
+                        raise ValueError(f"Symmetry {symmetry} not supported")
+                else:
+                    mask = self[1] > 0
+
+                r = self[1, mask]
 
                 bnds = np.argwhere(r == 1).ravel()
                 bnds = [None, bnds]

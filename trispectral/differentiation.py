@@ -385,8 +385,13 @@ def gradient_operator(
 
             mats.append(mat)
 
-    if "radial" in grid.geom or "polar" in grid.geom:
-        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            mask = (grid[0] >= 0) & (grid[1] > 0)
+        else:
+            mask = grid[1] > 0
+
+        ri = 1 / grid[1][mask]
 
         mats[0] = ri[:, np.newaxis] * mats[0]
 
@@ -409,8 +414,13 @@ def divergence_operator(
         grid, accuracy, symmetry, parities, wavevector, stack=False
     )
 
-    if "radial" in grid.geom or "polar" in grid.geom:
-        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            mask = (grid[0] >= 0) & (grid[1] > 0)
+        else:
+            mask = grid[1] > 0
+
+        ri = 1 / grid[1][mask]
 
         mats[1] = mats[1] + ri[:, np.newaxis] * np.identity(mats[1].shape[0])
 
@@ -481,8 +491,13 @@ def scalar_laplacian_operator(
 
             mats.append(mat)
 
-    if "radial" in grid.geom or "polar" in grid.geom:
-        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            mask = (grid[0] >= 0) & (grid[1] > 0)
+        else:
+            mask = grid[1] > 0
+
+        ri = 1 / grid[1][mask]
 
         mats[1] = mats[1] + ri[:, np.newaxis] * DifferentialMatrix(
             grid,
@@ -508,8 +523,11 @@ def vector_laplacian_operator(
     wavevector: Union[None, tuple] = None,
 ):
     npts = np.prod(grid.npts)
-    if "radial" in grid.geom or "polar" in grid.geom:
-        npts = int(npts / 2)
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            npts = int(npts / 4)
+        else:
+            npts = int(npts / 2)
 
     ndim = grid.num_dim if wavevector is None else 3
 
@@ -523,8 +541,13 @@ def vector_laplacian_operator(
             grid, accuracy, symmetry, parities[axis], wavevector
         )
 
-    if "radial" in grid.geom or "polar" in grid.geom:
-        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            mask = (grid[0] >= 0) & (grid[1] > 0)
+        else:
+            mask = grid[1] > 0
+
+        ri = 1 / grid[1][mask]
 
         mats[:npts, :npts] -= ri[:, np.newaxis]**2 * np.identity(npts)
         mats[npts : 2 * npts, npts : 2 * npts] -= ri[
@@ -570,8 +593,11 @@ def _directional_derivative_operator_from_a(
     wavevector: Union[None, tuple] = None,
 ):
     npts = np.prod(grid.npts)
-    if "radial" in grid.geom or "polar" in grid.geom:
-        npts = int(npts / 2)
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            npts = int(npts / 4)
+        else:
+            npts = int(npts / 2)
 
     ndim = grid.num_dim if wavevector is None else 3
 
@@ -588,7 +614,7 @@ def _directional_derivative_operator_from_a(
         )
         g = [
             a[
-                0 + j * npts : npts + j * npts
+                j * npts : npts + j * npts
             ][:, np.newaxis] * g[j] for j in range(ndim)
         ]
         g = np.sum(g, axis=0)
@@ -600,13 +626,18 @@ def _directional_derivative_operator_from_a(
             0 + axis * npts : npts + axis * npts,
         ] = g
 
-    if "radial" in grid.geom or "polar" in grid.geom:
-        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            mask = (grid[0] >= 0) & (grid[1] > 0)
+        else:
+            mask = grid[1] > 0
 
-        mats[:npts, npts : 2 * npts] = (ri * a[0])[:, np.newaxis] * np.identity(
-            npts
-        )
-        mats[npts : 2 * npts, :npts] = -(ri * a[0])[
+        ri = 1 / grid[1][mask]
+
+        mats[
+            : npts, npts : 2 * npts
+        ] = (ri * a[: npts])[:, np.newaxis] * np.identity(npts)
+        mats[npts : 2 * npts, :npts] = -(ri * a[: npts])[
             :, np.newaxis
         ] * np.identity(npts)
 
@@ -625,8 +656,11 @@ def _directional_derivative_operator_from_b(
     wavevector: Union[None, tuple] = None,
 ):
     npts = np.prod(grid.npts)
-    if "radial" in grid.geom or "polar" in grid.geom:
-        npts = int(npts / 2)
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            npts = int(npts / 4)
+        else:
+            npts = int(npts / 2)
 
     ndim = grid.num_dim if wavevector is None else 3
 
@@ -651,11 +685,18 @@ def _directional_derivative_operator_from_b(
         mats = mats.astype(g.dtype)
         mats[0 + axis * npts : npts + axis * npts] = g
 
-    if "radial" in grid.geom or "polar" in grid.geom:
-        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            mask = (grid[0] >= 0) & (grid[1] > 0)
+        else:
+            mask = grid[1] > 0
 
-        mats[:npts, :npts] += (ri * b[1])[:, np.newaxis] * np.identity(npts)
-        mats[npts : 2 * npts, :npts] -= (ri * b[0])[
+        ri = 1 / grid[1][mask]
+
+        mats[: npts, : npts] += (
+            ri * b[npts : 2 * npts]
+        )[:, np.newaxis] * np.identity(npts)
+        mats[npts : 2 * npts, : npts] -= (ri * b[: npts])[
             :, np.newaxis
         ] * np.identity(npts)
 
@@ -695,8 +736,11 @@ def _curl_line(
     wavevector: Union[None, tuple] = None,
 ):
     npts = np.prod(grid.npts)
-    if "radial" in grid.geom or "polar" in grid.geom:
-        npts = int(npts / 2)
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            npts = int(npts / 4)
+        else:
+            npts = int(npts / 2)
 
     axes = 0, 1, 2
 
@@ -756,8 +800,11 @@ def curl_operator(
     wavevector: Union[None, tuple] = None,
 ):
     npts = np.prod(grid.npts)
-    if "radial" in grid.geom or "polar" in grid.geom:
-        npts = int(npts / 2)
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            npts = int(npts / 4)
+        else:
+            npts = int(npts / 2)
 
     if wavevector is None:
         ndim = grid.num_dim
@@ -778,8 +825,13 @@ def curl_operator(
             grid, axis, accuracy, symmetry, parities, wavevector
         )
 
-    if "radial" in grid.geom or "polar" in grid.geom:
-        ri = 1 / (grid[grid.num_dim - 1][grid[grid.num_dim - 1] > 0])
+    if "polar" in grid.geom:
+        if symmetry is not None:
+            mask = (grid[0] >= 0) & (grid[1] > 0)
+        else:
+            mask = grid[1] > 0
+
+        ri = 1 / grid[1][mask]
 
         mats = -mats
 
