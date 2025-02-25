@@ -420,6 +420,26 @@ class Grid(np.ndarray):
             )
 
     @classmethod
+    def box(
+        cls,
+        *bounds,
+        discs=[],
+        register=True,
+        num=None,
+        override=False,
+    ):
+        if register:
+            return cls.register(
+                *bounds,
+                from_bounds=True,
+                discs=discs,
+                num=num,
+                override=override,
+            )
+        else:
+            return cls.from_bounds(*bounds, discs=discs)
+
+    @classmethod
     def polar(
         cls,
         nphi,
@@ -552,7 +572,7 @@ class Grid(np.ndarray):
                 if self.num_dim > 1:
                     for i in range(self.num_dim - 1):
                         for j in range(1, self.num_dim):
-                            if i == j: # 'degenerate' case
+                            if i == j:  # 'degenerate' case
                                 continue
                             bnds[i] = bnds[i][~np.isin(bnds[i], bnds[j])]
                             bnds[i] = bnds[i][
@@ -563,7 +583,8 @@ class Grid(np.ndarray):
                             ]
                             bnds[self.num_dim + i] = bnds[self.num_dim + i][
                                 ~np.isin(
-                                    bnds[self.num_dim + i], bnds[self.num_dim + j]
+                                    bnds[self.num_dim + i],
+                                    bnds[self.num_dim + j],
                                 )
                             ]
 
